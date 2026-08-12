@@ -1,3 +1,4 @@
+import webbrowser
 from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
@@ -35,6 +36,41 @@ def login():
 def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
+
+# --- RUTAS DE LAS SECCIONES DEL MENÚ ---
+
+@app.route("/inventario")
+def inventario():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Inventario", contenido="Gestión e historial del inventario de productos.")
+
+@app.route("/ingresar-entrada")
+def ingresar_entrada():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Ingresar Entrada", contenido="Registro de nuevas entradas de mercancía.")
+
+@app.route("/ingresar-venta")
+def ingresar_venta():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Ingresar Venta", contenido="Registro de nuevas ventas.")
+
+@app.route("/utilidad")
+def utilidad():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Utilidad", contenido="Reporte de ganancias y utilidades.")
+
+@app.route("/total-ventas")
+def total_ventas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Total Ventas", contenido="Resumen total del volumen de ventas.")
+
+@app.route("/total-entradas")
+def total_entradas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
+
+def abrir_navegador():
+    webbrowser.open_new("http://127.0.0.1:5000/login")
 
 if __name__ == "__main__":
     app.run(debug=True)
