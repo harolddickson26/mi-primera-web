@@ -1,4 +1,3 @@
-import webbrowser
 from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
@@ -68,9 +67,6 @@ def total_ventas():
 def total_entradas():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
-
-def abrir_navegador():
-    webbrowser.open_new("http://127.0.0.1:5000/login")
 
 if __name__ == "__main__":
     app.run(debug=True)
