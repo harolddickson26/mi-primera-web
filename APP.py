@@ -23,7 +23,7 @@ class Cliente(db.Model):
     celular = db.Column(db.String(50), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.now)
 
-# Crear la base de datos y las tablas al iniciar la aplicación
+# Crear la base de datos y las tablas
 with app.app_context():
     db.create_all()
 
@@ -63,7 +63,8 @@ def logout():
 def clientes():
     if "usuario" not in session: 
         return redirect(url_for("login"))
-    lista_clientes = Cliente.query.order_by(Cliente.fecha_creacion.desc()).all()
+    # Ordenar por nombre alfabéticamente
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
     return render_template("clientes.html", clientes=lista_clientes)
 
 @app.route("/clientes/nuevo", methods=["GET", "POST"])
@@ -96,7 +97,34 @@ def nuevo_cliente():
 
     return render_template("nuevo_cliente.html", error=error)
 
-# --- RUTAS RESTANTES DE SECCIONES ---
+@app.route("/clientes/editar/<int:id>", methods=["GET", "POST"])
+def editar_cliente(id):
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    
+    cliente = Cliente.query.get_or_404(id)
+    error = None
+
+    if request.method == "POST":
+        nit_nuevo = request.form["nit_cedula"]
+        
+        # Validar si cambió el NIT y si pertenece a otro cliente registrado
+        existente = Cliente.query.filter(Cliente.nit_cedula == nit_nuevo, Cliente.id != id).first()
+        if existente:
+            error = "Ese NIT o Cédula ya está registrado en otro cliente."
+        else:
+            cliente.nombre = request.form["nombre"]
+            cliente.nit_cedula = nit_nuevo
+            cliente.direccion = request.form["direccion"]
+            cliente.email = request.form["email"]
+            cliente.celular = request.form["celular"]
+            
+            db.session.commit()
+            return redirect(url_for("clientes"))
+
+    return render_template("editar_cliente.html", cliente=cliente, error=error)
+
+# --- RUTAS RESTANTES ---
 
 @app.route("/inventario")
 def inventario():
