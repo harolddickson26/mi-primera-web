@@ -68,5 +68,15 @@ def total_entradas():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
 
+@app.route("/CLIENTE")
+def total_entradas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
+
+@app.route("/ABONOS")
+def total_entradas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
+
 if __name__ == "__main__":
     app.run(debug=True)
