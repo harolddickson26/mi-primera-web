@@ -1,8 +1,31 @@
+import os
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-# Clave secreta requerida por Flask para manejar sesiones seguras
 app.secret_key = "clave_secreta_super_segura"
+
+# Configuración de la base de datos SQLite
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'inventario.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Modelo para la tabla de Clientes
+class Cliente(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    nit_cedula = db.Column(db.String(50), nullable=False, unique=True)
+    direccion = db.Column(db.String(200), nullable=True)
+    email = db.Column(db.String(100), nullable=True)
+    celular = db.Column(db.String(50), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.now)
+
+# Crear la base de datos y las tablas al iniciar la aplicación
+with app.app_context():
+    db.create_all()
 
 # Credenciales de prueba
 USUARIO_CORRECTO = "DICKSON"
@@ -10,10 +33,8 @@ PASSWORD_CORRECTO = "1234"
 
 @app.route("/")
 def inicio():
-    # Si el usuario ya inició sesión, muestra la página principal
     if "usuario" in session:
         return render_template("index.html", usuario=session["usuario"])
-    # Si no ha iniciado sesión, redirige al login
     return redirect(url_for("login"))
 
 @app.route("/login", methods=["GET", "POST"])
@@ -36,7 +57,46 @@ def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
 
-# --- RUTAS DE LAS SECCIONES DEL MENÚ ---
+# --- MÓDULO DE CLIENTES ---
+
+@app.route("/clientes")
+def clientes():
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    lista_clientes = Cliente.query.order_by(Cliente.fecha_creacion.desc()).all()
+    return render_template("clientes.html", clientes=lista_clientes)
+
+@app.route("/clientes/nuevo", methods=["GET", "POST"])
+def nuevo_cliente():
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    
+    error = None
+    if request.method == "POST":
+        nombre = request.form["nombre"]
+        nit_cedula = request.form["nit_cedula"]
+        direccion = request.form["direccion"]
+        email = request.form["email"]
+        celular = request.form["celular"]
+
+        cliente_existente = Cliente.query.filter_by(nit_cedula=nit_cedula).first()
+        if cliente_existente:
+            error = "Ya existe un cliente registrado con ese NIT o Cédula."
+        else:
+            nuevo = Cliente(
+                nombre=nombre,
+                nit_cedula=nit_cedula,
+                direccion=direccion,
+                email=email,
+                celular=celular
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            return redirect(url_for("clientes"))
+
+    return render_template("nuevo_cliente.html", error=error)
+
+# --- RUTAS RESTANTES DE SECCIONES ---
 
 @app.route("/inventario")
 def inventario():
@@ -68,15 +128,10 @@ def total_entradas():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
 
-@app.route("/CLIENTE")
-def CLIENTES():
-    if "usuario" not in session: return redirect(url_for("login"))
-    return render_template("seccion.html", titulo="LISTADO DE CLIENTES", contenido="Listado de clientes.")
-
 @app.route("/ABONOS")
 def ABONOS():
     if "usuario" not in session: return redirect(url_for("login"))
-    return render_template("seccion.html", titulo="Total Abonos", contenido="Resumen total de las abonos registrados.")
+    return render_template("seccion.html", titulo="Total Abonos", contenido="Resumen total de los abonos registrados.")
 
 if __name__ == "__main__":
     app.run(debug=True)
