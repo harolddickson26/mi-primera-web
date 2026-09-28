@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Nuevo Cliente</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #2c3e50; margin-top: 0; text-align: center; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; text-align: center; text-decoration: none; font-weight: bold; }
+        .btn-submit { background-color: #2ecc71; color: white; }
+        .btn-submit:hover { background-color: #27ae60; }
+        .btn-cancel { background-color: #e74c3c; color: white; }
+        .btn-cancel:hover { background-color: #c0392b; }
+        .error { color: red; font-size: 14px; margin-bottom: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Agregar Nuevo Cliente</h2>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form action="/clientes/nuevo" method="POST">
+            <div class="form-group">
+                <label for="nombre">Nombre Completo / Razón Social *</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+
+            <div class="form-group">
+                <label for="nit_cedula">NIT o Cédula *</label>
+                <input type="text" id="nit_cedula" name="nit_cedula" required>
+            </div>
+
+            <div class="form-group">
+                <label for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email">
+            </div>
+
+            <div class="form-group">
+                <label for="celular">Celular / Teléfono</label>
+                <input type="tel" id="celular" name="celular">
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-submit">Registrar Cliente</button>
+                <a href="/clientes" class="btn btn-cancel">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
