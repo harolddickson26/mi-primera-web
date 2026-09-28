@@ -69,12 +69,12 @@ def total_entradas():
     return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
 
 @app.route("/CLIENTE")
-def total_entradas():
+def CLIENTES():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="LISTADO DE CLIENTES", contenido="Listado de clientes.")
 
 @app.route("/ABONOS")
-def total_entradas():
+def ABONOS():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Total Abonos", contenido="Resumen total de las abonos registrados.")
 
