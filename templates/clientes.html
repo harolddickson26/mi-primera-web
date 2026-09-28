@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado de Clientes</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 40px 20px; text-align: center; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { color: #2c3e50; margin: 0; }
+        .btn { padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
+        .btn-add { background-color: #2ecc71; color: white; }
+        .btn-add:hover { background-color: #27ae60; }
+        .btn-back { background-color: #7f8c8d; color: white; }
+        .btn-back:hover { background-color: #95a5a6; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #34495e; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        .empty-msg { color: #7f8c8d; font-style: italic; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Listado de Clientes</h1>
+            <a href="/clientes/nuevo" class="btn btn-add">➕ Agregar Nuevo Cliente</a>
+        </div>
+
+        {% if clientes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>CLIENTES</th>
+                        <th>NIT O CÉDULA</th>
+                        <th>DIRECCIÓN</th>
+                        <th>EMAIL</th>
+                        <th>CELULAR</th>
+                        <th>FECHA DE CREACIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.nombre }}</td>
+                            <td>{{ cliente.nit_cedula }}</td>
+                            <td>{{ cliente.direccion or '-' }}</td>
+                            <td>{{ cliente.email or '-' }}</td>
+                            <td>{{ cliente.celular or '-' }}</td>
+                            <td>{{ cliente.fecha_creacion.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-msg">No hay clientes registrados en el sistema.</p>
+        {% endif %}
+
+        <div style="margin-top: 30px;">
+            <a href="/" class="btn btn-back">⬅ Volver al Menú Principal</a>
+        </div>
+    </div>
+</body>
+</html>
