@@ -7,7 +7,6 @@ from sqlalchemy import text
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta_super_segura")
 
-# Detectar la base de datos en Render o usar SQLite como respaldo local
 db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(os.path.abspath(os.path.dirname(__file__)), "inventario.db"))
 
 if db_url.startswith("postgres://"):
@@ -20,7 +19,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELOS DE LA BASE DE DATOS ---
+# ==========================================
+# MODELOS DE LA BASE DE DATOS
+# ==========================================
 
 class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,20 +51,28 @@ class Venta(db.Model):
     precio_unitario = db.Column(db.Float, nullable=False)
     total_costo = db.Column(db.Float, nullable=False)
     total_venta = db.Column(db.Float, nullable=False)
+    tipo_pago = db.Column(db.String(50), nullable=True)
+    entidad_pago = db.Column(db.String(100), nullable=True)
     fecha_venta = db.Column(db.Date, nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
+# Migraciones automáticas de columnas en Postgres / SQLite
 with app.app_context():
     db.create_all()
     try:
         db.session.execute(text("ALTER TABLE venta ADD COLUMN IF NOT EXISTS cliente_nombre VARCHAR(100);"))
+        db.session.execute(text("ALTER TABLE venta ADD COLUMN IF NOT EXISTS tipo_pago VARCHAR(50);"))
+        db.session.execute(text("ALTER TABLE venta ADD COLUMN IF NOT EXISTS entidad_pago VARCHAR(100);"))
         db.session.commit()
     except Exception:
         db.session.rollback()
 
-# Credenciales de prueba
 USUARIO_CORRECTO = "DICKSON"
 PASSWORD_CORRECTO = "1234"
+
+# ==========================================
+# RUTAS DE AUTENTICACIÓN
+# ==========================================
 
 @app.route("/")
 def inicio():
@@ -91,7 +100,9 @@ def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
 
-# --- MÓDULO DE CLIENTES ---
+# ==========================================
+# MÓDULO CLIENTES
+# ==========================================
 
 @app.route("/clientes")
 def clientes():
@@ -140,7 +151,9 @@ def editar_cliente(id):
             return redirect(url_for("clientes"))
     return render_template("editar_cliente.html", cliente=cliente, error=error)
 
-# --- MÓDULO DE PRODUCTOS ---
+# ==========================================
+# MÓDULO PRODUCTOS
+# ==========================================
 
 @app.route("/productos")
 def productos():
@@ -185,7 +198,9 @@ def editar_producto(id):
             return redirect(url_for("productos"))
     return render_template("editar_producto.html", producto=producto, error=error)
 
-# --- MÓDULO DE VENTAS ---
+# ==========================================
+# MÓDULO VENTAS
+# ==========================================
 
 @app.route("/ingresar-venta", methods=["GET", "POST"])
 def ingresar_venta():
@@ -204,6 +219,13 @@ def ingresar_venta():
             precio_unitario = float(request.form["precio_unitario"])
             total_venta = cantidad * precio_unitario
             total_costo = cantidad * costo_unitario
+            
+            tipo_pago = request.form.get("tipo_pago", "CONTADO")
+            if tipo_pago == "CREDITO":
+                entidad_pago = None
+            else:
+                entidad_pago = request.form.get("entidad_pago", "Efectivo")
+
             fecha_venta_str = request.form["fecha_venta"]
             fecha_venta = datetime.strptime(fecha_venta_str, "%Y-%m-%d").date()
 
@@ -218,12 +240,15 @@ def ingresar_venta():
                 precio_unitario=precio_unitario,
                 total_costo=total_costo,
                 total_venta=total_venta,
+                tipo_pago=tipo_pago,
+                entidad_pago=entidad_pago,
                 fecha_venta=fecha_venta
             )
             db.session.add(nueva_venta)
             db.session.commit()
             return redirect(url_for("total_ventas"))
         except Exception as e:
+            db.session.rollback()
             error = f"Error al registrar la venta: {str(e)}"
 
     lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
@@ -233,7 +258,8 @@ def ingresar_venta():
 
 @app.route("/ventas/editar/<int:id>", methods=["GET", "POST"])
 def editar_venta(id):
-    if "usuario" not in session: return redirect(url_for("login"))
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
     
     venta = Venta.query.get_or_404(id)
     error = None
@@ -244,6 +270,7 @@ def editar_venta(id):
             producto_id = request.form.get("producto_id")
             if producto_id:
                 venta.producto_id = int(producto_id)
+            
             venta.codigo_producto = request.form["codigo_producto"]
             venta.nombre_producto = request.form["nombre_producto"]
             venta.embalaje = request.form.get("embalaje", "")
@@ -253,12 +280,21 @@ def editar_venta(id):
             venta.total_venta = venta.cantidad * venta.precio_unitario
             venta.total_costo = venta.cantidad * venta.costo_unitario
             
+            nuevo_tipo = request.form.get("tipo_pago", "CONTADO")
+            venta.tipo_pago = nuevo_tipo
+            
+            if nuevo_tipo == "CREDITO":
+                venta.entidad_pago = None
+            else:
+                venta.entidad_pago = request.form.get("entidad_pago", "Efectivo")
+
             fecha_venta_str = request.form["fecha_venta"]
             venta.fecha_venta = datetime.strptime(fecha_venta_str, "%Y-%m-%d").date()
 
             db.session.commit()
             return redirect(url_for("total_ventas"))
         except Exception as e:
+            db.session.rollback()
             error = f"Error al actualizar la venta: {str(e)}"
 
     lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
@@ -283,7 +319,9 @@ def total_ventas():
         utilidad_total=utilidad_total
     )
 
-# --- RUTAS RESTANTES ---
+# ==========================================
+# RUTAS AUXILIARES / PENDIENTES
+# ==========================================
 
 @app.route("/inventario")
 def inventario():
