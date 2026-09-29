@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta_super_segura")
@@ -52,8 +53,15 @@ class Venta(db.Model):
     fecha_venta = db.Column(db.Date, nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
+# Crear o actualizar las tablas en la base de datos de manera segura
 with app.app_context():
     db.create_all()
+    try:
+        # Migración automática para agregar la columna cliente_nombre a la tabla existente si falta
+        db.session.execute(text("ALTER TABLE venta ADD COLUMN IF NOT EXISTS cliente_nombre VARCHAR(100);"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 # Credenciales de prueba
 USUARIO_CORRECTO = "DICKSON"
