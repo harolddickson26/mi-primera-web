@@ -36,6 +36,17 @@
         <form action="/ingresar-venta" method="POST">
             <div class="form-grid">
                 
+                <!-- Seleccionar Cliente -->
+                <div class="form-group full-width">
+                    <label for="cliente_nombre">CLIENTE *</label>
+                    <select id="cliente_nombre" name="cliente_nombre" required>
+                        <option value="">-- Seleccione un cliente --</option>
+                        {% for cli in clientes %}
+                            <option value="{{ cli.nombre }}">{{ cli.nombre }} (NIT/CC: {{ cli.nit_cedula }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- Nombre del Producto (Buscador/Seleccionador) -->
                 <div class="form-group full-width">
                     <label for="producto_select">NOMBRE DEL PRODUCTO *</label>
@@ -49,7 +60,6 @@
                     </select>
                 </div>
 
-                <!-- Campos ocultos/autocompletados -->
                 <input type="hidden" id="producto_id" name="producto_id">
                 <input type="hidden" id="nombre_producto" name="nombre_producto">
 
