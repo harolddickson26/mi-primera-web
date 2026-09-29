@@ -20,6 +20,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# --- MODELOS DE LA BASE DE DATOS ---
+
 # Modelo para la tabla de Clientes
 class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +30,14 @@ class Cliente(db.Model):
     direccion = db.Column(db.String(200), nullable=True)
     email = db.Column(db.String(100), nullable=True)
     celular = db.Column(db.String(50), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.now)
+
+# Modelo para la tabla de Productos
+class Producto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(50), nullable=False, unique=True)
+    nombre = db.Column(db.String(150), nullable=False)
+    embalaje = db.Column(db.String(100), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.now)
 
 # Crear la base de datos y las tablas al iniciar la aplicación
@@ -70,7 +80,6 @@ def logout():
 def clientes():
     if "usuario" not in session: 
         return redirect(url_for("login"))
-    # Ordenar por nombre alfabéticamente
     lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
     return render_template("clientes.html", clientes=lista_clientes)
 
@@ -114,8 +123,6 @@ def editar_cliente(id):
 
     if request.method == "POST":
         nit_nuevo = request.form["nit_cedula"]
-        
-        # Validar si cambió el NIT y si pertenece a otro cliente registrado
         existente = Cliente.query.filter(Cliente.nit_cedula == nit_nuevo, Cliente.id != id).first()
         if existente:
             error = "Ese NIT o Cédula ya está registrado en otro cliente."
@@ -131,7 +138,65 @@ def editar_cliente(id):
 
     return render_template("editar_cliente.html", cliente=cliente, error=error)
 
-# --- RUTAS RESTANTES DE SECCIONES ---
+# --- MÓDULO DE PRODUCTOS ---
+
+@app.route("/productos")
+def productos():
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    return render_template("productos.html", productos=lista_productos)
+
+@app.route("/productos/nuevo", methods=["GET", "POST"])
+def nuevo_producto():
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    
+    error = None
+    if request.method == "POST":
+        codigo = request.form["codigo"]
+        nombre = request.form["nombre"]
+        embalaje = request.form["embalaje"]
+
+        producto_existente = Producto.query.filter_by(codigo=codigo).first()
+        if producto_existente:
+            error = "Ya existe un producto registrado con ese código."
+        else:
+            nuevo = Producto(
+                codigo=codigo,
+                nombre=nombre,
+                embalaje=embalaje
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            return redirect(url_for("productos"))
+
+    return render_template("nuevo_producto.html", error=error)
+
+@app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
+def editar_producto(id):
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    
+    producto = Producto.query.get_or_404(id)
+    error = None
+
+    if request.method == "POST":
+        codigo_nuevo = request.form["codigo"]
+        existente = Producto.query.filter(Producto.codigo == codigo_nuevo, Producto.id != id).first()
+        if existente:
+            error = "Ese Código de Producto ya pertenece a otro registro."
+        else:
+            producto.codigo = codigo_nuevo
+            producto.nombre = request.form["nombre"]
+            producto.embalaje = request.form["embalaje"]
+            
+            db.session.commit()
+            return redirect(url_for("productos"))
+
+    return render_template("editar_producto.html", producto=producto, error=error)
+
+# --- RUTAS RESTANTES ---
 
 @app.route("/inventario")
 def inventario():
