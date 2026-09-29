@@ -9,7 +9,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta_super_segura")
 # Detectar la base de datos en Render o usar SQLite como respaldo local
 db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(os.path.abspath(os.path.dirname(__file__)), "inventario.db"))
 
-# Asegurar el uso del driver psycopg (psycopg3) para SQLAlchemy 2.x
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
 elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+psycopg://"):
@@ -40,6 +39,7 @@ class Producto(db.Model):
 
 class Venta(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    cliente_nombre = db.Column(db.String(100), nullable=True)
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=True)
     codigo_producto = db.Column(db.String(50), nullable=False)
     nombre_producto = db.Column(db.String(150), nullable=False)
@@ -52,7 +52,6 @@ class Venta(db.Model):
     fecha_venta = db.Column(db.Date, nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
-# Crear las tablas en la base de datos
 with app.app_context():
     db.create_all()
 
@@ -189,6 +188,7 @@ def ingresar_venta():
     error = None
     if request.method == "POST":
         try:
+            cliente_nombre = request.form.get("cliente_nombre", "Público General")
             producto_id = request.form.get("producto_id")
             codigo_producto = request.form["codigo_producto"]
             nombre_producto = request.form["nombre_producto"]
@@ -202,6 +202,7 @@ def ingresar_venta():
             fecha_venta = datetime.strptime(fecha_venta_str, "%Y-%m-%d").date()
 
             nueva_venta = Venta(
+                cliente_nombre=cliente_nombre,
                 producto_id=int(producto_id) if producto_id else None,
                 codigo_producto=codigo_producto,
                 nombre_producto=nombre_producto,
@@ -219,9 +220,10 @@ def ingresar_venta():
         except Exception as e:
             error = f"Error al registrar la venta: {str(e)}"
 
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
     lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
-    return render_template("ingresar_venta.html", productos=lista_productos, fecha_hoy=fecha_hoy, error=error)
+    return render_template("ingresar_venta.html", clientes=lista_clientes, productos=lista_productos, fecha_hoy=fecha_hoy, error=error)
 
 @app.route("/total-ventas")
 def total_ventas():
@@ -229,7 +231,6 @@ def total_ventas():
     
     lista_ventas = Venta.query.order_by(Venta.fecha_venta.desc(), Venta.id.desc()).all()
     
-    # Calcular totales generales
     suma_ventas = sum(v.total_venta for v in lista_ventas)
     suma_costos = sum(v.total_costo for v in lista_ventas)
     utilidad_total = suma_ventas - suma_costos
