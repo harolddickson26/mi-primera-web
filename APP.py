@@ -53,11 +53,9 @@ class Venta(db.Model):
     fecha_venta = db.Column(db.Date, nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
-# Crear o actualizar las tablas en la base de datos de manera segura
 with app.app_context():
     db.create_all()
     try:
-        # Migración automática para agregar la columna cliente_nombre a la tabla existente si falta
         db.session.execute(text("ALTER TABLE venta ADD COLUMN IF NOT EXISTS cliente_nombre VARCHAR(100);"))
         db.session.commit()
     except Exception:
@@ -232,6 +230,40 @@ def ingresar_venta():
     lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
     return render_template("ingresar_venta.html", clientes=lista_clientes, productos=lista_productos, fecha_hoy=fecha_hoy, error=error)
+
+@app.route("/ventas/editar/<int:id>", methods=["GET", "POST"])
+def editar_venta(id):
+    if "usuario" not in session: return redirect(url_for("login"))
+    
+    venta = Venta.query.get_or_404(id)
+    error = None
+
+    if request.method == "POST":
+        try:
+            venta.cliente_nombre = request.form.get("cliente_nombre", "Público General")
+            producto_id = request.form.get("producto_id")
+            if producto_id:
+                venta.producto_id = int(producto_id)
+            venta.codigo_producto = request.form["codigo_producto"]
+            venta.nombre_producto = request.form["nombre_producto"]
+            venta.embalaje = request.form.get("embalaje", "")
+            venta.cantidad = float(request.form["cantidad"])
+            venta.costo_unitario = float(request.form["costo_unitario"])
+            venta.precio_unitario = float(request.form["precio_unitario"])
+            venta.total_venta = venta.cantidad * venta.precio_unitario
+            venta.total_costo = venta.cantidad * venta.costo_unitario
+            
+            fecha_venta_str = request.form["fecha_venta"]
+            venta.fecha_venta = datetime.strptime(fecha_venta_str, "%Y-%m-%d").date()
+
+            db.session.commit()
+            return redirect(url_for("total_ventas"))
+        except Exception as e:
+            error = f"Error al actualizar la venta: {str(e)}"
+
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    return render_template("editar_venta.html", venta=venta, clientes=lista_clientes, productos=lista_productos, error=error)
 
 @app.route("/total-ventas")
 def total_ventas():
