@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado de Productos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 40px 20px; text-align: center; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 950px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2c3e50; margin: 0; }
+        .btn { padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; }
+        .btn-add { background-color: #2ecc71; color: white; }
+        .btn-add:hover { background-color: #27ae60; }
+        .btn-edit { background-color: #f39c12; color: white; padding: 6px 12px; font-size: 13px; }
+        .btn-edit:hover { background-color: #d35400; }
+        .btn-back { background-color: #7f8c8d; color: white; }
+        .btn-back:hover { background-color: #95a5a6; }
+        .search-container { margin-bottom: 20px; text-align: left; }
+        .search-input { width: 100%; max-width: 350px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #34495e; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        .empty-msg { color: #7f8c8d; font-style: italic; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Listado de Productos</h1>
+            <a href="/productos/nuevo" class="btn btn-add">➕ Agregar Nuevo Producto</a>
+        </div>
+
+        {% if productos %}
+            <div class="search-container">
+                <input type="text" id="filtroProducto" class="search-input" placeholder="🔍 Buscar por código, producto o embalaje..." onkeyup="filtrarTabla()">
+            </div>
+
+            <table id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th>CÓDIGO DE PRODUCTO</th>
+                        <th>NOMBRE DE PRODUCTO</th>
+                        <th>EMBALAJE</th>
+                        <th>FECHA CREACIÓN</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                        <tr>
+                            <td><strong>{{ producto.codigo }}</strong></td>
+                            <td>{{ producto.nombre }}</td>
+                            <td>{{ producto.embalaje or '-' }}</td>
+                            <td>{{ producto.fecha_creacion.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="/productos/editar/{{ producto.id }}" class="btn btn-edit">✏️ Editar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-msg">No hay productos registrados en el sistema.</p>
+        {% endif %}
+
+        <div style="margin-top: 30px;">
+            <a href="/" class="btn btn-back">⬅ Volver al Menú Principal</a>
+        </div>
+    </div>
+
+    <script>
+        function filtrarTabla() {
+            let input = document.getElementById("filtroProducto");
+            let filter = input.value.toLowerCase();
+            let table = document.getElementById("tablaProductos");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let textoFila = tr[i].textContent.toLowerCase();
+                if (textoFila.indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
