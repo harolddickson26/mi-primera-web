@@ -4,11 +4,16 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.secret_key = "clave_secreta_super_segura"
+app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta_super_segura")
 
-# Configuración de la base de datos SQLite
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'inventario.db')
+# Detectar PostgreSQL en Render o usar SQLite como respaldo local
+db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(os.path.abspath(os.path.dirname(__file__)), "inventario.db"))
+
+# Ajuste de compatibilidad para PostgreSQL en Render
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -23,7 +28,7 @@ class Cliente(db.Model):
     celular = db.Column(db.String(50), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.now)
 
-# Crear la base de datos y las tablas
+# Crear la base de datos y las tablas al iniciar la aplicación
 with app.app_context():
     db.create_all()
 
@@ -124,7 +129,7 @@ def editar_cliente(id):
 
     return render_template("editar_cliente.html", cliente=cliente, error=error)
 
-# --- RUTAS RESTANTES ---
+# --- RUTAS RESTANTES DE SECCIONES ---
 
 @app.route("/inventario")
 def inventario():
