@@ -6,7 +6,7 @@
     <title>Total Ventas</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 40px 20px; text-align: center; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1100px; margin: 0 auto; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1150px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: #2c3e50; margin: 0; }
         .btn { padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; }
@@ -40,7 +40,6 @@
         </div>
 
         {% if ventas %}
-            <!-- Tarjetas de Totales Acumulados -->
             <div class="kpi-container">
                 <div class="kpi-card kpi-ventas">
                     <h3>TOTAL VENTAS</h3>
@@ -56,15 +55,15 @@
                 </div>
             </div>
 
-            <!-- Filtro/Buscador -->
             <div class="search-container">
-                <input type="text" id="filtroVentas" class="search-input" placeholder="🔍 Buscar por fecha, código o producto..." onkeyup="filtrarTabla()">
+                <input type="text" id="filtroVentas" class="search-input" placeholder="🔍 Buscar por fecha, cliente, código o producto..." onkeyup="filtrarTabla()">
             </div>
 
             <table id="tablaVentas">
                 <thead>
                     <tr>
                         <th>FECHA</th>
+                        <th>CLIENTE</th>
                         <th>CÓDIGO</th>
                         <th>PRODUCTO</th>
                         <th>EMBALAJE</th>
@@ -79,7 +78,8 @@
                     {% for v in ventas %}
                         <tr>
                             <td>{{ v.fecha_venta.strftime('%Y-%m-%d') }}</td>
-                            <td><strong>{{ v.codigo_producto }}</strong></td>
+                            <td><strong>{{ v.cliente_nombre or 'Público General' }}</strong></td>
+                            <td>{{ v.codigo_producto }}</td>
                             <td>{{ v.nombre_producto }}</td>
                             <td>{{ v.embalaje or '-' }}</td>
                             <td>{{ v.cantidad }}</td>
