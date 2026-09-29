@@ -7,9 +7,22 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; margin: 0; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h2 { color: #2c3e50; margin: 0; }
         
+        .header-actions { display: flex; gap: 10px; }
+        
+        .btn { padding: 9px 15px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; transition: background-color 0.2s; }
+        .btn-home { background-color: #34495e; color: white; }
+        .btn-home:hover { background-color: #2c3e50; }
+        .btn-new { background-color: #2ecc71; color: white; }
+        .btn-new:hover { background-color: #27ae60; }
+        .btn-edit { background-color: #f39c12; color: white; padding: 5px 10px; font-size: 12px; }
+        .btn-edit:hover { background-color: #d35400; }
+        .btn-back { background-color: #7f8c8d; color: white; }
+        .btn-back:hover { background-color: #95a5a6; }
+
         .kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
         .kpi-card { padding: 15px; border-radius: 8px; text-align: center; color: white; font-weight: bold; }
         .kpi-ventas { background-color: #2ecc71; }
@@ -19,7 +32,7 @@
         .kpi-card p { margin: 5px 0 0 0; font-size: 22px; }
 
         .search-box { margin-bottom: 15px; }
-        .search-box input { width: 100%; max-width: 300px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; }
+        .search-box input { width: 100%; max-width: 320px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
         th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #ddd; }
@@ -35,11 +48,7 @@
         .badge-credito { background-color: #f39c12; color: white; }
         .badge-contado { background-color: #27ae60; color: white; }
 
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 13px; }
-        .btn-new { background-color: #2ecc71; color: white; }
-        .btn-new:hover { background-color: #27ae60; }
-        .btn-edit { background-color: #f39c12; color: white; padding: 5px 10px; font-size: 12px; }
-        .btn-edit:hover { background-color: #d35400; }
+        .footer-actions { margin-top: 30px; text-align: center; }
     </style>
 </head>
 <body>
@@ -47,7 +56,10 @@
 <div class="container">
     <div class="header">
         <h2>💰 Resumen Total de Ventas</h2>
-        <a href="/ingresar-venta" class="btn btn-new">🛒 Registrar Nueva Venta</a>
+        <div class="header-actions">
+            <a href="/" class="btn btn-home">🏠 Volver al Inicio</a>
+            <a href="/ingresar-venta" class="btn btn-new">🛒 Registrar Nueva Venta</a>
+        </div>
     </div>
 
     <div class="kpi-container">
@@ -130,6 +142,10 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="footer-actions">
+        <a href="/" class="btn btn-back">⬅ Volver al Menú Principal</a>
+    </div>
 </div>
 
 <script>
