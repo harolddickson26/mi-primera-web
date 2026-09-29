@@ -6,12 +6,14 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta_super_segura")
 
-# Detectar PostgreSQL en Render o usar SQLite como respaldo local
+# Detectar la base de datos en Render o usar SQLite como respaldo local
 db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(os.path.abspath(os.path.dirname(__file__)), "inventario.db"))
 
-# Ajuste de compatibilidad para PostgreSQL en Render
+# Asegurar el uso del driver psycopg (psycopg3) para SQLAlchemy 2.x
 if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+    db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+psycopg://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
