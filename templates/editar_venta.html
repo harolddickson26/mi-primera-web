@@ -103,6 +103,26 @@
                     <input type="text" id="total_venta" class="computed-field" readonly>
                 </div>
 
+                <!-- TIPO DE PAGO -->
+                <div class="form-group">
+                    <label for="tipo_pago">TIPO DE PAGO *</label>
+                    <select id="tipo_pago" name="tipo_pago" onchange="toggleMetodoPago()" required>
+                        <option value="CONTADO" {% if venta.tipo_pago != 'CREDITO' %}selected{% endif %}>CONTADO / PAGO INMEDIATO</option>
+                        <option value="CREDITO" {% if venta.tipo_pago == 'CREDITO' %}selected{% endif %}>CRÉDITO</option>
+                    </select>
+                </div>
+
+                <!-- MÉTODO / ENTIDAD DE PAGO -->
+                <div class="form-group" id="contenedor_entidad">
+                    <label for="entidad_pago">MÉTODO / ENTIDAD BANCARIA *</label>
+                    <select id="entidad_pago" name="entidad_pago">
+                        <option value="Efectivo" {% if venta.entidad_pago == 'Efectivo' %}selected{% endif %}>Efectivo</option>
+                        <option value="Nequi" {% if venta.entidad_pago == 'Nequi' %}selected{% endif %}>Nequi</option>
+                        <option value="Daviplata" {% if venta.entidad_pago == 'Daviplata' %}selected{% endif %}>Daviplata</option>
+                        <option value="Otro" {% if venta.entidad_pago == 'Otro' %}selected{% endif %}>Otro</option>
+                    </select>
+                </div>
+
                 <div class="actions">
                     <button type="submit" class="btn btn-submit">🔄 Actualizar Venta</button>
                     <a href="/total-ventas" class="btn btn-cancel">Cancelar</a>
@@ -136,8 +156,24 @@
             document.getElementById("total_venta").value = "$ " + ventaTotal.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // Calcular automáticamente al cargar la pantalla
-        window.onload = calcularTotales;
+        function toggleMetodoPago() {
+            let tipoPago = document.getElementById("tipo_pago").value;
+            let contenedorEntidad = document.getElementById("contenedor_entidad");
+            let entidadPagoSelect = document.getElementById("entidad_pago");
+
+            if (tipoPago === "CONTADO") {
+                contenedorEntidad.style.display = "block";
+                entidadPagoSelect.required = true;
+            } else {
+                contenedorEntidad.style.display = "none";
+                entidadPagoSelect.required = false;
+            }
+        }
+
+        window.onload = function() {
+            calcularTotales();
+            toggleMetodoPago();
+        };
     </script>
 </body>
 </html>
