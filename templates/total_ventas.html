@@ -6,12 +6,14 @@
     <title>Total Ventas</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 40px 20px; text-align: center; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1150px; margin: 0 auto; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: #2c3e50; margin: 0; }
         .btn { padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; }
         .btn-add { background-color: #2ecc71; color: white; }
         .btn-add:hover { background-color: #27ae60; }
+        .btn-edit { background-color: #f39c12; color: white; padding: 6px 10px; font-size: 12px; }
+        .btn-edit:hover { background-color: #d35400; }
         .btn-back { background-color: #7f8c8d; color: white; }
         .btn-back:hover { background-color: #95a5a6; }
         
@@ -25,7 +27,7 @@
 
         .search-container { margin-bottom: 20px; text-align: left; }
         .search-input { width: 100%; max-width: 350px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; font-size: 13px; }
         th, td { padding: 10px; border-bottom: 1px solid #ddd; }
         th { background-color: #34495e; color: white; }
         tr:hover { background-color: #f1f1f1; }
@@ -72,6 +74,7 @@
                         <th>PRECIO UNIT.</th>
                         <th>COSTO VENTA</th>
                         <th>TOTAL VENTA</th>
+                        <th>ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,6 +90,9 @@
                             <td>$ {{ "{:,.2f}".format(v.precio_unitario) }}</td>
                             <td style="color: #e67e22; font-weight: bold;">$ {{ "{:,.2f}".format(v.total_costo) }}</td>
                             <td style="color: #27ae60; font-weight: bold;">$ {{ "{:,.2f}".format(v.total_venta) }}</td>
+                            <td>
+                                <a href="/ventas/editar/{{ v.id }}" class="btn btn-edit">✏️ Editar</a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
