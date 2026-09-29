@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ingresar Venta</title>
+    <title>Registro de Ingreso de Venta</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 40px 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
@@ -36,22 +36,21 @@
         <form action="/ingresar-venta" method="POST">
             <div class="form-grid">
                 
-                <!-- Seleccionar Cliente -->
+                <!-- Cliente -->
                 <div class="form-group full-width">
                     <label for="cliente_nombre">CLIENTE *</label>
                     <select id="cliente_nombre" name="cliente_nombre" required>
-                        <option value="">-- Seleccione un cliente --</option>
                         {% for cli in clientes %}
                             <option value="{{ cli.nombre }}">{{ cli.nombre }} (NIT/CC: {{ cli.nit_cedula }})</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <!-- Nombre del Producto (Buscador/Seleccionador) -->
+                <!-- Seleccionar Producto -->
                 <div class="form-group full-width">
                     <label for="producto_select">NOMBRE DEL PRODUCTO *</label>
                     <select id="producto_select" onchange="seleccionarProducto()" required>
-                        <option value="">-- Seleccione un producto --</option>
+                        <option value="" disabled selected>-- Seleccione un Producto --</option>
                         {% for prod in productos %}
                             <option value="{{ prod.id }}" data-codigo="{{ prod.codigo }}" data-nombre="{{ prod.nombre }}" data-embalaje="{{ prod.embalaje or '' }}">
                                 {{ prod.nombre }} ({{ prod.codigo }})
@@ -65,17 +64,17 @@
 
                 <div class="form-group">
                     <label for="codigo_producto">CÓDIGO DEL PRODUCTO</label>
-                    <input type="text" id="codigo_producto" name="codigo_producto" readonly required placeholder="Autocompletado">
+                    <input type="text" id="codigo_producto" name="codigo_producto" readonly required placeholder="Auto">
                 </div>
 
                 <div class="form-group">
                     <label for="embalaje">EMBALAJE</label>
-                    <input type="text" id="embalaje" name="embalaje" readonly placeholder="Autocompletado">
+                    <input type="text" id="embalaje" name="embalaje" readonly placeholder="Auto">
                 </div>
 
                 <div class="form-group">
                     <label for="cantidad">CANTIDAD *</label>
-                    <input type="number" step="0.01" min="0.01" id="cantidad" name="cantidad" required placeholder="0.00" oninput="calcularTotales()">
+                    <input type="number" step="0.01" min="0.01" id="cantidad" name="cantidad" placeholder="Ej: 2" required oninput="calcularTotales()">
                 </div>
 
                 <div class="form-group">
@@ -85,22 +84,42 @@
 
                 <div class="form-group">
                     <label for="costo_unitario">COSTO UNITARIO ($) *</label>
-                    <input type="number" step="0.01" min="0" id="costo_unitario" name="costo_unitario" required placeholder="0.00" oninput="calcularTotales()">
+                    <input type="number" step="0.01" min="0" id="costo_unitario" name="costo_unitario" placeholder="Ej: 9700" required oninput="calcularTotales()">
                 </div>
 
                 <div class="form-group">
                     <label for="precio_unitario">PRECIO UNITARIO ($) *</label>
-                    <input type="number" step="0.01" min="0" id="precio_unitario" name="precio_unitario" required placeholder="0.00" oninput="calcularTotales()">
+                    <input type="number" step="0.01" min="0" id="precio_unitario" name="precio_unitario" placeholder="Ej: 11000" required oninput="calcularTotales()">
                 </div>
 
                 <div class="form-group">
                     <label for="total_costo">COSTO DE VENTA ($)</label>
-                    <input type="text" id="total_costo" class="cost-field" readonly placeholder="$ 0.00">
+                    <input type="text" id="total_costo" class="cost-field" readonly placeholder="$ 0,00">
                 </div>
 
                 <div class="form-group">
                     <label for="total_venta">TOTAL VENTA ($)</label>
-                    <input type="text" id="total_venta" class="computed-field" readonly placeholder="$ 0.00">
+                    <input type="text" id="total_venta" class="computed-field" readonly placeholder="$ 0,00">
+                </div>
+
+                <!-- TIPO DE PAGO -->
+                <div class="form-group">
+                    <label for="tipo_pago">TIPO DE PAGO *</label>
+                    <select id="tipo_pago" name="tipo_pago" onchange="toggleMetodoPago()" required>
+                        <option value="CONTADO" selected>CONTADO / PAGO INMEDIATO</option>
+                        <option value="CREDITO">CRÉDITO</option>
+                    </select>
+                </div>
+
+                <!-- MÉTODO / ENTIDAD DE PAGO -->
+                <div class="form-group" id="contenedor_entidad">
+                    <label for="entidad_pago">MÉTODO / ENTIDAD BANCARIA *</label>
+                    <select id="entidad_pago" name="entidad_pago">
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Nequi">Nequi</option>
+                        <option value="Daviplata">Daviplata</option>
+                        <option value="Otro">Otro</option>
+                    </select>
                 </div>
 
                 <div class="actions">
@@ -121,11 +140,6 @@
                 document.getElementById("nombre_producto").value = option.getAttribute("data-nombre");
                 document.getElementById("codigo_producto").value = option.getAttribute("data-codigo");
                 document.getElementById("embalaje").value = option.getAttribute("data-embalaje");
-            } else {
-                document.getElementById("producto_id").value = "";
-                document.getElementById("nombre_producto").value = "";
-                document.getElementById("codigo_producto").value = "";
-                document.getElementById("embalaje").value = "";
             }
         }
 
@@ -140,6 +154,24 @@
             document.getElementById("total_costo").value = "$ " + costoTotal.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             document.getElementById("total_venta").value = "$ " + ventaTotal.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
+        function toggleMetodoPago() {
+            let tipoPago = document.getElementById("tipo_pago").value;
+            let contenedorEntidad = document.getElementById("contenedor_entidad");
+            let entidadPagoSelect = document.getElementById("entidad_pago");
+
+            if (tipoPago === "CONTADO") {
+                contenedorEntidad.style.display = "block";
+                entidadPagoSelect.required = true;
+            } else {
+                contenedorEntidad.style.display = "none";
+                entidadPagoSelect.required = false;
+            }
+        }
+
+        window.onload = function() {
+            toggleMetodoPago();
+        };
     </script>
 </body>
 </html>
