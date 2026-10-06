@@ -6,7 +6,7 @@
     <title>Resumen Total de Entradas</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; margin: 0; }
-        .container { max-width: 1450px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .container { max-width: 1550px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h2 { color: #2c3e50; margin: 0; }
@@ -69,7 +69,7 @@
             <p>$ {{ "{:,.2f}".format(suma_costos_total or 0) }}</p>
         </div>
         <div class="kpi-card kpi-unidades">
-            <h3>Unidades Totales Ingresadas</h3>
+            <h3>Unidades Totales</h3>
             <p>{{ "{:,.1f}".format(suma_unidades or 0) }}</p>
         </div>
     </div>
@@ -82,24 +82,22 @@
         <table id="entradasTable">
             <thead>
                 <tr>
-                    <th>Fecha</th>
-                    <th>Proveedor</th>
-                    <th>Factura</th>
-                    <th>Código</th>
-                    <th>Producto</th>
-                    <th>Embalaje</th>
-                    <th class="text-center">Cant. Paquetes</th>
-                    <th class="text-center">Cant. Unidades</th>
-                    <th class="text-right">Costo</th>
-                    <th class="text-right">Costo + IVA</th>
-                    <th class="text-right">Costo Unit. Placa</th>
-                    <th class="text-right">Costo Unit. Paca</th>
-                    <th class="text-right">Costo Total</th>
-                    <th class="text-right">Costo Unitario</th>
-                    <th class="text-right">Precio Sugerido</th>
-                    <th class="text-right">Costo x Cantidad</th>
-                    <th class="text-right">Costo Total (Final)</th>
-                    <th class="text-center">Acciones</th>
+                    <th>FECHA</th>
+                    <th>PROVEEDOR</th>
+                    <th>FACTURA</th>
+                    <th>CODIGO</th>
+                    <th>PRODUCTO</th>
+                    <th>EMBALAJE</th>
+                    <th class="text-center">CANTIDAD PAQUETES</th>
+                    <th class="text-center">CANTIDAD DE UNIDADES</th>
+                    <th class="text-right">COSTO</th>
+                    <th class="text-right">COSTO + IVA</th>
+                    <th class="text-right">COSTO UNITARIO POR PLACA</th>
+                    <th class="text-right">COSTO UNITARIO POR PACA</th>
+                    <th class="text-right">COSTO UNITARIO</th>
+                    <th class="text-right">PRECIO SUGERIDO DE VENTA</th>
+                    <th class="text-right">COSTO TOTAL</th>
+                    <th class="text-center">ACCIONES</th>
                 </tr>
             </thead>
             <tbody>
@@ -117,18 +115,16 @@
                     <td class="text-right">$ {{ "{:,.2f}".format(e.costo_iva or 0) }}</td>
                     <td class="text-right">$ {{ "{:,.2f}".format(e.costo_unit_placa or 0) }}</td>
                     <td class="text-right">$ {{ "{:,.2f}".format(e.costo_unit_paca or 0) }}</td>
-                    <td class="text-right cost-text">$ {{ "{:,.2f}".format(e.costo_total or 0) }}</td>
                     <td class="text-right">$ {{ "{:,.2f}".format(e.costo_unitario or 0) }}</td>
                     <td class="text-right price-text">$ {{ "{:,.2f}".format(e.precio_sugerido or 0) }}</td>
-                    <td class="text-right">$ {{ "{:,.2f}".format(e.costo_x_cantidad or 0) }}</td>
-                    <td class="text-right cost-text">$ {{ "{:,.2f}".format(e.costo_total_final or e.costo_total or 0) }}</td>
+                    <td class="text-right cost-text">$ {{ "{:,.2f}".format(e.costo_total or 0) }}</td>
                     <td class="text-center">
                         <a href="/entradas/editar/{{ e.id }}" class="btn btn-edit">✏️ Editar</a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="18" class="text-center">No hay entradas registradas aún.</td>
+                    <td colspan="16" class="text-center">No hay entradas registradas aún.</td>
                 </tr>
                 {% endfor %}
             </tbody>
