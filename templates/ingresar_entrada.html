@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Nueva Entrada</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #34495e; font-size: 13px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        input:focus, select:focus { border-color: #2980b9; outline: none; }
+        
+        .row { display: flex; gap: 15px; }
+        .row .form-group { flex: 1; }
+
+        .btn-container { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-submit { background-color: #2980b9; color: white; }
+        .btn-submit:hover { background-color: #2471a3; }
+        .btn-back { background-color: #7f8c8d; color: white; }
+        .btn-back:hover { background-color: #95a5a6; }
+
+        .alert-error { background-color: #e74c3c; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        .calc-preview { background-color: #ecf0f1; padding: 12px; border-radius: 6px; margin-top: 15px; font-size: 13px; color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📥 Registrar Nueva Entrada de Mercancía</h2>
+
+    {% if error %}
+        <div class="alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="row">
+            <div class="form-group">
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
+            </div>
+            <div class="form-group">
+                <label for="proveedor">Proveedor</label>
+                <input type="text" id="proveedor" name="proveedor" placeholder="Nombre del proveedor" required>
+            </div>
+            <div class="form-group">
+                <label for="factura">Factura N°</label>
+                <input type="text" id="factura" name="factura" placeholder="Número de factura">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="producto_select">Seleccionar Producto (Código / Nombre)</label>
+            <select id="producto_select" name="producto_select" onchange="actualizarProducto()" required>
+                <option value="">-- Seleccione un producto --</option>
+                {% for p in productos %}
+                    <option value="{{ p.codigo }}" data-nombre="{{ p.nombre }}" data-embalaje="{{ p.embalaje }}">
+                        [{{ p.codigo }}] - {{ p.nombre }} (Embalaje: {{ p.embalaje }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Campos ocultos que se envían al backend -->
+        <input type="hidden" id="codigo" name="codigo">
+        <input type="hidden" id="producto" name="producto">
+        <input type="hidden" id="embalaje" name="embalaje">
+
+        <div class="row">
+            <div class="form-group">
+                <label for="cant_paquetes">Cantidad Paquetes a Ingresar</label>
+                <input type="number" step="any" id="cant_paquetes" name="cant_paquetes" placeholder="Ej. 10" oninput="calcularValores()" required>
+            </div>
+            <div class="form-group">
+                <label for="costo">Costo (Base)</label>
+                <input type="number" step="any" id="costo" name="costo" placeholder="0.00" oninput="calcularValores()" required>
+            </div>
+            <div class="form-group">
+                <label for="tipo_iva">Aplicar IVA (19%)</label>
+                <select id="tipo_iva" name="tipo_iva" onchange="calcularValores()">
+                    <option value="sin_iva">Sin IVA (Sumar 19%)</option>
+                    <option value="con_iva">Con IVA Incluido (Valor Neto)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="calc-preview" id="previewBox">
+            <strong>Vista previa de cálculos automáticos:</strong><br>
+            - Cantidad de Unidades: <span id="lblUnidades">0</span><br>
+            - Costo Unitario / Paca: $<span id="lblCostoPaca">0.00</span><br>
+            - Costo Total: $<span id="lblCostoTotal">0.00</span><br>
+            - Costo Unitario por Unidad: $<span id="lblCostoUnitario">0.00</span><br>
+            - Precio Sugerido Venta (+10%): $<span id="lblPrecioSugerido">0.00</span>
+        </div>
+
+        <div class="btn-container">
+            <a href="/total-entradas" class="btn btn-back">⬅ Cancelar / Volver</a>
+            <button type="submit" class="btn btn-submit">💾 Guardar Entrada</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function extraerNumeroEmbalaje(embalajeStr) {
+        if (!embalajeStr) return 1;
+        let match = embalajeStr.match(/(\d+[\.,]?\d*)/);
+        return match ? parseFloat(match[0].replace(',', '.')) : 1;
+    }
+
+    function actualizarProducto() {
+        let select = document.getElementById("producto_select");
+        let option = select.options[select.selectedIndex];
+
+        if (option.value) {
+            document.getElementById("codigo").value = option.value;
+            let nombreProd = option.getAttribute("data-nombre");
+            let embalajeProd = option.getAttribute("data-embalaje");
+            
+            document.getElementById("producto").value = nombreProd;
+            document.getElementById("embalaje").value = embalajeProd;
+        } else {
+            document.getElementById("codigo").value = "";
+            document.getElementById("producto").value = "";
+            document.getElementById("embalaje").value = "";
+        }
+        calcularValores();
+    }
+
+    function calcularValores() {
+        let select = document.getElementById("producto_select");
+        let option = select.options[select.selectedIndex];
+        let embalajeStr = option ? option.getAttribute("data-embalaje") : "1";
+        let factorEmbalaje = extraerNumeroEmbalaje(embalajeStr);
+
+        let cantPaquetes = parseFloat(document.getElementById("cant_paquetes").value) || 0;
+        let costoBase = parseFloat(document.getElementById("costo").value) || 0;
+        let tipoIva = document.getElementById("tipo_iva").value;
+
+        let cantUnidades = cantPaquetes * factorEmbalaje;
+        
+        let costoPaca = (tipoIva === "sin_iva") ? (costoBase * 1.19) : costoBase;
+        let costoTotal = cantPaquetes * costoPaca;
+        let costoUnitario = cantUnidades > 0 ? (costoTotal / cantUnidades) : 0;
+        let precioSugerido = costoPaca * 1.10;
+
+        document.getElementById("lblUnidades").innerText = cantUnidades.toLocaleString('es-CO', {maximumFractionDigits: 2});
+        document.getElementById("lblCostoPaca").innerText = costoPaca.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById("lblCostoTotal").innerText = costoTotal.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById("lblCostoUnitario").innerText = costoUnitario.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById("lblSeugerido")?.innerText;
+        document.getElementById("lblPrecioSugerido").innerText = precioSugerido.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+</script>
+
+</body>
+</html>
