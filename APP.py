@@ -362,10 +362,76 @@ def total_entradas():
         suma_unidades=suma_unidades
     )
 
-@app.route("/ingresar-entrada")
+@app.route("/ingresar-entrada", methods=["GET", "POST"])
 def ingresar_entrada():
     if "usuario" not in session: return redirect(url_for("login"))
-    return render_template("seccion.html", titulo="Ingresar Entrada", contenido="Registro de nuevas entradas de mercancía.")
+    
+    error = None
+    if request.method == "POST":
+        try:
+            fecha_str = request.form["fecha"]
+            fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+            proveedor = request.form.get("proveedor", "")
+            factura = request.form.get("factura", "")
+            
+            codigo = request.form["codigo"]
+            producto = request.form["producto"]
+            embalaje_str = request.form.get("embalaje", "1")
+            
+            # Extraer factor numérico del embalaje (ej. "24 Unidades" -> 24)
+            import re
+            match = re.search(r'(\d+[\.,]?\d*)', embalaje_str)
+            factor_embalaje = float(match.group(1).replace(',', '.')) if match else 1.0
+
+            cant_paquetes = float(request.form["cant_paquetes"])
+            cant_unidades = cant_paquetes * factor_embalaje
+            
+            costo = float(request.form["costo"])
+            tipo_iva = request.form.get("tipo_iva", "sin_iva")
+            
+            # Cálculos solicitados
+            if tipo_iva == "sin_iva":
+                costo_iva = costo * 1.19
+                costo_unit_placa = costo * 1.19
+                costo_unit_paca = costo * 1.19
+            else:
+                costo_iva = costo
+                costo_unit_placa = costo
+                costo_unit_paca = costo
+                
+            costo_total = cant_paquetes * costo_unit_paca
+            costo_unitario = (costo_total / cant_unidades) if cant_unidades > 0 else 0
+            precio_sugerido = costo_unit_paca * 1.10
+            
+            nueva_entrada = Entrada(
+                fecha=fecha,
+                proveedor=proveedor,
+                factura=factura,
+                codigo=codigo,
+                producto=producto,
+                embalaje=embalaje_str,
+                cant_paquetes=cant_paquetes,
+                cant_unidades=cant_unidades,
+                costo=costo,
+                costo_iva=costo_iva,
+                costo_unit_placa=costo_unit_placa,
+                costo_unit_paca=costo_unit_paca,
+                costo_total=costo_total,
+                costo_unitario=costo_unitario,
+                precio_sugerido=precio_sugerido,
+                costo_x_cantidad=costo_total,
+                costo_total_final=costo_total
+            )
+            db.session.add(nueva_entrada)
+            db.session.commit()
+            return redirect(url_for("total_entradas"))
+        except Exception as e:
+            db.session.rollback()
+            error = f"Error al registrar la entrada: {str(e)}"
+
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+    return render_template("ingresar_entrada.html", productos=lista_productos, fecha_hoy=fecha_hoy, error=error)
 
 # ==========================================
 # RUTAS AUXILIARES / PENDIENTES
