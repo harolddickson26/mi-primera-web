@@ -322,16 +322,6 @@ def editar_venta(id):
     lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
     return render_template("editar_venta.html", venta=venta, clientes=lista_clientes, productos=lista_productos, error=error)
 
-@app.route("/ventas/eliminar/<int:id>", methods=["POST"])
-def eliminar_venta(id):
-    if "usuario" not in session: return redirect(url_for("login"))
-    clave = request.form.get("clave", "")
-    if clave == "0000":
-        venta = Venta.query.get_or_404(id)
-        db.session.delete(venta)
-        db.session.commit()
-    return redirect(url_for("total_ventas"))
-
 @app.route("/total-ventas")
 def total_ventas():
     if "usuario" not in session: return redirect(url_for("login"))
@@ -371,6 +361,16 @@ def total_entradas():
         suma_costos_total=suma_costos_total,
         suma_unidades=suma_unidades
     )
+
+@app.route("/entradas/eliminar/<int:id>", methods=["POST"])
+def eliminar_entrada(id):
+    if "usuario" not in session: return redirect(url_for("login"))
+    clave = request.form.get("clave", "")
+    if clave == "0000":
+        entrada = Entrada.query.get_or_404(id)
+        db.session.delete(entrada)
+        db.session.commit()
+    return redirect(url_for("total_entradas"))
 
 @app.route("/ingresar-entrada", methods=["GET", "POST"])
 def ingresar_entrada():
