@@ -43,6 +43,7 @@
         .text-center { text-align: center; }
         .cost-text { color: #d35400; font-weight: bold; }
         .sale-text { color: #27ae60; font-weight: bold; }
+        .profit-text { color: #2980b9; font-weight: bold; } /* 👈 Estilo para la nueva columna de utilidad */
         
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
         .badge-credito { background-color: #f39c12; color: white; }
@@ -94,6 +95,7 @@
                 <th class="text-right">Precio Unit.</th>
                 <th class="text-right">Costo Venta</th>
                 <th class="text-right">Total Venta</th>
+                <th class="text-right">Utilidad</th> <!-- 👈 NUEVA COLUMNA -->
                 <th class="text-center">Tipo Pago</th>
                 <th class="text-center">Entidad / Método</th>
                 <th class="text-center">Acciones</th>
@@ -113,6 +115,9 @@
                 <td class="text-right cost-text">$ {{ "{:,.2f}".format(v.total_costo) }}</td>
                 <td class="text-right sale-text">$ {{ "{:,.2f}".format(v.total_venta) }}</td>
                 
+                <!-- 👈 NUEVA CELDA: Resta de Total Venta menos Total Costo -->
+                <td class="text-right profit-text">$ {{ "{:,.2f}".format(v.total_venta - v.total_costo) }}</td>
+
                 <!-- Tipo de Pago -->
                 <td class="text-center">
                     {% if v.tipo_pago == 'CREDITO' %}
@@ -137,7 +142,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="13" class="text-center">No hay ventas registradas aún.</td>
+                <td colspan="14" class="text-center">No hay ventas registradas aún.</td>
             </tr>
             {% endfor %}
         </tbody>
