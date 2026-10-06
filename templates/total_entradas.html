@@ -20,6 +20,8 @@
         .btn-new:hover { background-color: #2471a3; }
         .btn-edit { background-color: #f39c12; color: white; padding: 5px 10px; font-size: 12px; }
         .btn-edit:hover { background-color: #d35400; }
+        .btn-delete { background-color: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; }
+        .btn-delete:hover { background-color: #c0392b; }
         .btn-back { background-color: #7f8c8d; color: white; }
         .btn-back:hover { background-color: #95a5a6; }
 
@@ -120,6 +122,7 @@
                     <td class="text-right cost-text">$ {{ "{:,.2f}".format(e.costo_total or 0) }}</td>
                     <td class="text-center">
                         <a href="/entradas/editar/{{ e.id }}" class="btn btn-edit">✏️ Editar</a>
+                        <button type="button" class="btn btn-delete" onclick="eliminarEntrada({{ e.id }})">🗑️ Eliminar</button>
                     </td>
                 </tr>
                 {% else %}
@@ -137,6 +140,26 @@
 </div>
 
 <script>
+    function eliminarEntrada(id) {
+        let clave = prompt("Ingrese la clave de seguridad para eliminar esta entrada:");
+        if (clave === "0000") {
+            let form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/entradas/eliminar/" + id;
+            
+            let inputClave = document.createElement("input");
+            inputClave.type = "hidden";
+            inputClave.name = "clave";
+            inputClave.value = clave;
+            
+            form.appendChild(inputClave);
+            document.body.appendChild(form);
+            form.submit();
+        } else if (clave !== null) {
+            alert("Clave incorrecta. No se pudo eliminar la entrada.");
+        }
+    }
+
     function filtrarTabla() {
         let input = document.getElementById("searchInput");
         let filter = input.value.toLowerCase();
