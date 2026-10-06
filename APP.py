@@ -56,6 +56,27 @@ class Venta(db.Model):
     fecha_venta = db.Column(db.Date, nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
+class Entrada(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, nullable=False)
+    proveedor = db.Column(db.String(150), nullable=True)
+    factura = db.Column(db.String(100), nullable=True)
+    codigo = db.Column(db.String(50), nullable=True)
+    producto = db.Column(db.String(150), nullable=True)
+    embalaje = db.Column(db.String(100), nullable=True)
+    cant_paquetes = db.Column(db.Float, default=0.0)
+    cant_unidades = db.Column(db.Float, default=0.0)
+    costo = db.Column(db.Float, default=0.0)
+    costo_iva = db.Column(db.Float, default=0.0)
+    costo_unit_placa = db.Column(db.Float, default=0.0)
+    costo_unit_paca = db.Column(db.Float, default=0.0)
+    costo_total = db.Column(db.Float, default=0.0)
+    costo_unitario = db.Column(db.Float, default=0.0)
+    precio_sugerido = db.Column(db.Float, default=0.0)
+    costo_x_cantidad = db.Column(db.Float, default=0.0)
+    costo_total_final = db.Column(db.Float, default=0.0)
+    fecha_registro = db.Column(db.DateTime, default=datetime.now)
+
 # Migraciones automáticas de columnas en Postgres / SQLite
 with app.app_context():
     db.create_all()
@@ -320,6 +341,33 @@ def total_ventas():
     )
 
 # ==========================================
+# MÓDULO ENTRADAS
+# ==========================================
+
+@app.route("/total-entradas")
+def total_entradas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    
+    lista_entradas = Entrada.query.order_by(Entrada.fecha.desc(), Entrada.id.desc()).all()
+    
+    total_registros = len(lista_entradas)
+    suma_costos_total = sum(e.costo_total_final or e.costo_total or 0 for e in lista_entradas)
+    suma_unidades = sum(e.cant_unidades or 0 for e in lista_entradas)
+
+    return render_template(
+        "total_entradas.html",
+        entradas=lista_entradas,
+        total_registros=total_registros,
+        suma_costos_total=suma_costos_total,
+        suma_unidades=suma_unidades
+    )
+
+@app.route("/ingresar-entrada")
+def ingresar_entrada():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Ingresar Entrada", contenido="Registro de nuevas entradas de mercancía.")
+
+# ==========================================
 # RUTAS AUXILIARES / PENDIENTES
 # ==========================================
 
@@ -328,20 +376,10 @@ def inventario():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Inventario", contenido="Gestión e historial del inventario de productos.")
 
-@app.route("/ingresar-entrada")
-def ingresar_entrada():
-    if "usuario" not in session: return redirect(url_for("login"))
-    return render_template("seccion.html", titulo="Ingresar Entrada", contenido="Registro de nuevas entradas de mercancía.")
-
 @app.route("/utilidad")
 def utilidad():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Utilidad", contenido="Reporte de ganancias y utilidades.")
-
-@app.route("/total-entradas")
-def total_entradas():
-    if "usuario" not in session: return redirect(url_for("login"))
-    return render_template("seccion.html", titulo="Total Entradas", contenido="Resumen total de las entradas registradas.")
 
 @app.route("/ABONOS")
 def ABONOS():
