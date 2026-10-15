@@ -77,6 +77,15 @@ class Entrada(db.Model):
     costo_total_final = db.Column(db.Float, default=0.0)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
+# NUEVO MODELO PARA LOS ABONOS
+class Abono(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, nullable=False)
+    cliente = db.Column(db.String(100), nullable=False)
+    total_abono = db.Column(db.Float, nullable=False)
+    medio_abono = db.Column(db.String(50), nullable=False)
+    fecha_registro = db.Column(db.DateTime, default=datetime.now)
+
 # Migraciones automáticas de columnas en Postgres / SQLite
 with app.app_context():
     db.create_all()
@@ -448,6 +457,41 @@ def ingresar_entrada():
     return render_template("ingresar_entrada.html", productos=lista_productos, fecha_hoy=fecha_hoy)
 
 # ==========================================
+# MÓDULO ABONOS (NUEVO)
+# ==========================================
+
+@app.route("/ABONOS")
+def ABONOS():
+    if "usuario" not in session: return redirect(url_for("login"))
+    lista_abonos = Abono.query.order_by(Abono.fecha.desc(), Abono.id.desc()).all()
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+    return render_template("abonos.html", abonos=lista_abonos, clientes=lista_clientes, fecha_hoy=fecha_hoy)
+
+@app.route("/abonos/crear", methods=["POST"])
+def crear_abono():
+    if "usuario" not in session: return redirect(url_for("login"))
+    try:
+        fecha_str = request.form.get("fecha")
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        cliente = request.form.get("cliente")
+        total_abono = float(request.form.get("total_abono", 0))
+        medio_abono = request.form.get("medio_abono")
+
+        nuevo_abono = Abono(
+            fecha=fecha,
+            cliente=cliente,
+            total_abono=total_abono,
+            medio_abono=medio_abono
+        )
+        db.session.add(nuevo_abono)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        
+    return redirect(url_for("ABONOS"))
+
+# ==========================================
 # RUTAS AUXILIARES / PENDIENTES
 # ==========================================
 
@@ -460,11 +504,6 @@ def inventario():
 def utilidad():
     if "usuario" not in session: return redirect(url_for("login"))
     return render_template("seccion.html", titulo="Utilidad", contenido="Reporte de ganancias y utilidades.")
-
-@app.route("/ABONOS")
-def ABONOS():
-    if "usuario" not in session: return redirect(url_for("login"))
-    return render_template("seccion.html", titulo="Total Abonos", contenido="Resumen total de los abonos registrados.")
 
 if __name__ == "__main__":
     app.run(debug=True)
