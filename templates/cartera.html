@@ -10,10 +10,7 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
         .card-custom { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .stat-card { border-radius: 10px; border: none; padding: 15px; color: white; }
-        .bg-saldo { background-color: #dc3545; }
-        .bg-credito { background-color: #0d6efd; }
-        .bg-abonos { background-color: #198754; }
+        .stat-card { border-radius: 10px; border: none; padding: 20px; color: white; background-color: #dc3545; }
     </style>
 </head>
 <body>
@@ -30,33 +27,21 @@
 
     <!-- Filtro Superior por Cliente -->
     <div class="row bg-light p-3 rounded mb-4 align-items-center border">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <label for="filtroCliente" class="form-label fw-bold">Filtrar por Cliente:</label>
-            <input type="text" id="filtroCliente" class="form-control" placeholder="Escriba el nombre del cliente para buscar..." onkeyup="filtrarTabla()">
+            <input type="text" id="filtroCliente" class="form-control" placeholder="Escriba el nombre del cliente para buscar..." oninput="filtrarTabla()">
         </div>
-        <div class="col-md-6 text-end align-self-end mt-2 mt-md-0">
-            <button class="btn btn-outline-secondary" onclick="limpiarFiltro()">Mostrar Todos</button>
+        <div class="col-md-4 text-end align-self-end mt-2 mt-md-0">
+            <button class="btn btn-outline-secondary w-100" onclick="limpiarFiltro()">Mostrar Todos</button>
         </div>
     </div>
 
-    <!-- Tarjetas con Sumatorias Totales -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card bg-saldo shadow-sm">
-                <div class="text-uppercase small fw-bold">Saldo Pendiente Total</div>
-                <div class="fs-3 fw-bold" id="saldoPendienteGlobal">$ 0.00</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-credito shadow-sm">
-                <div class="text-uppercase small fw-bold">Total Ventas Crédito</div>
-                <div class="fs-3 fw-bold" id="totalCreditoGlobal">$ 0.00</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-abonos shadow-sm">
-                <div class="text-uppercase small fw-bold">Total Abonos</div>
-                <div class="fs-3 fw-bold" id="totalAbonosGlobal">$ 0.00</div>
+    <!-- Tarjeta Única: Solo Saldo Pendiente Total -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="stat-card shadow-sm text-center">
+                <div class="text-uppercase small fw-bold mb-1">SALDO PENDIENTE TOTAL</div>
+                <div class="fs-2 fw-bold" id="saldoPendienteGlobal">$ 0.00</div>
             </div>
         </div>
     </div>
@@ -72,7 +57,7 @@
                     <th class="text-end">Abonos Realizados ($)</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tbodyCartera">
                 {% if cartera %}
                     {% for c in cartera %}
                     <tr class="fila-cartera">
@@ -92,8 +77,8 @@
                     </tr>
                     {% endfor %}
                 {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-4">No hay registros de cartera o ventas a crédito disponibles.</td>
+                    <tr id="filaVacia">
+                        <td colspan="4" class="text-center text-muted py-4">No hay registros de cartera disponibles.</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -101,31 +86,29 @@
     </div>
 </div>
 
-<!-- Script de Filtrado Dinámico y Cálculo de Totales -->
+<!-- Script Corregido de Filtro y Sumatoria Única -->
 <script>
-    function calcularTotales() {
-        let totalCredito = 0;
-        let totalAbonos = 0;
+    function calcularSaldoTotal() {
         let totalSaldo = 0;
-
         const filas = document.querySelectorAll('.fila-cartera');
+
         filas.forEach(row => {
             if (row.style.display !== 'none') {
-                const credito = parseFloat(row.querySelector('.col-credito').getAttribute('data-valor')) || 0;
-                const abonos = parseFloat(row.querySelector('.col-abonos').getAttribute('data-valor')) || 0;
-                const saldo = parseFloat(row.querySelector('.col-saldo').getAttribute('data-valor')) || 0;
-
-                totalCredito += credito;
-                totalAbonos += abonos;
-                totalSaldo += saldo;
+                const celdaSaldo = row.querySelector('.col-saldo');
+                if (celdaSaldo) {
+                    const saldo = parseFloat(celdaSaldo.getAttribute('data-valor')) || 0;
+                    totalSaldo += saldo;
+                }
             }
         });
 
-        const formatoMoneda = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 2 });
+        const formatoMoneda = new Intl.NumberFormat('es-CO', { 
+            style: 'currency', 
+            currency: 'COP', 
+            minimumFractionDigits: 2 
+        });
 
         document.getElementById('saldoPendienteGlobal').innerText = formatoMoneda.format(totalSaldo);
-        document.getElementById('totalCreditoGlobal').innerText = formatoMoneda.format(totalCredito);
-        document.getElementById('totalAbonosGlobal').innerText = formatoMoneda.format(totalAbonos);
     }
 
     function filtrarTabla() {
@@ -134,4 +117,27 @@
         const filas = document.querySelectorAll('.fila-cartera');
 
         filas.forEach(row => {
-            const clienteText = row.querySelector
+            const clienteText = row.querySelector('.col-cliente').textContent.toLowerCase();
+            if (clienteText.includes(filterValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        calcularSaldoTotal();
+    }
+
+    function limpiarFiltro() {
+        document.getElementById('filtroCliente').value = '';
+        filtrarTabla();
+    }
+
+    // Ejecutar al cargar la página
+    document.addEventListener("DOMContentLoaded", function() {
+        calcularSaldoTotal();
+    });
+</script>
+
+</body>
+</html>
