@@ -91,10 +91,10 @@
                 <th>Producto</th>
                 <th>Embalaje</th>
                 <th class="text-center">Cant.</th>
-                <th class="text-right">Costo Unit.</th>
                 <th class="text-right">Precio Unit.</th>
-                <th class="text-right">Costo Venta</th>
                 <th class="text-right">Total Venta</th>
+                <th class="text-right">Costo Unit.</th>
+                <th class="text-right">Costo Venta</th>
                 <th class="text-right">Utilidad</th> <!-- 👈 NUEVA COLUMNA -->
                 <th class="text-center">Tipo Pago</th>
                 <th class="text-center">Entidad / Método</th>
@@ -110,10 +110,10 @@
                 <td>{{ v.nombre_producto }}</td>
                 <td>{{ v.embalaje or '-' }}</td>
                 <td class="text-center">{{ v.cantidad }}</td>
-                <td class="text-right">$ {{ "{:,.2f}".format(v.costo_unitario) }}</td>
                 <td class="text-right">$ {{ "{:,.2f}".format(v.precio_unitario) }}</td>
-                <td class="text-right cost-text">$ {{ "{:,.2f}".format(v.total_costo) }}</td>
                 <td class="text-right sale-text">$ {{ "{:,.2f}".format(v.total_venta) }}</td>
+                <td class="text-right">$ {{ "{:,.2f}".format(v.costo_unitario) }}</td>
+                <td class="text-right cost-text">$ {{ "{:,.2f}".format(v.total_costo) }}</td>
                 
                 <!-- 👈 NUEVA CELDA: Resta de Total Venta menos Total Costo -->
                 <td class="text-right profit-text">$ {{ "{:,.2f}".format(v.total_venta - v.total_costo) }}</td>
