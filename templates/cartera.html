@@ -11,9 +11,9 @@
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
         .card-custom { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .stat-card { border-radius: 10px; border: none; padding: 15px; color: white; }
+        .bg-saldo { background-color: #dc3545; }
         .bg-credito { background-color: #0d6efd; }
         .bg-abonos { background-color: #198754; }
-        .bg-saldo { background-color: #dc3545; }
     </style>
 </head>
 <body>
@@ -42,6 +42,12 @@
     <!-- Tarjetas con Sumatorias Totales -->
     <div class="row g-3 mb-4">
         <div class="col-md-4">
+            <div class="stat-card bg-saldo shadow-sm">
+                <div class="text-uppercase small fw-bold">Saldo Pendiente Total</div>
+                <div class="fs-3 fw-bold" id="saldoPendienteGlobal">$ 0.00</div>
+            </div>
+        </div>
+        <div class="col-md-4">
             <div class="stat-card bg-credito shadow-sm">
                 <div class="text-uppercase small fw-bold">Total Ventas Crédito</div>
                 <div class="fs-3 fw-bold" id="totalCreditoGlobal">$ 0.00</div>
@@ -53,23 +59,17 @@
                 <div class="fs-3 fw-bold" id="totalAbonosGlobal">$ 0.00</div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-saldo shadow-sm">
-                <div class="text-uppercase small fw-bold">Saldo Pendiente Total</div>
-                <div class="fs-3 fw-bold" id="saldoPendienteGlobal">$ 0.00</div>
-            </div>
-        </div>
     </div>
 
-    <!-- Tabla de Cartera -->
+    <!-- Tabla de Cartera con Saldo Pendiente en la 2da columna -->
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle" id="tablaCartera">
             <thead class="table-dark">
                 <tr>
                     <th>Cliente</th>
+                    <th class="text-end">Saldo Pendiente ($)</th>
                     <th class="text-end">Ventas Crédito ($)</th>
                     <th class="text-end">Abonos Realizados ($)</th>
-                    <th class="text-end">Saldo Pendiente ($)</th>
                 </tr>
             </thead>
             <tbody>
@@ -77,14 +77,17 @@
                     {% for c in cartera %}
                     <tr class="fila-cartera">
                         <td class="fw-bold col-cliente">{{ c.cliente }}</td>
+                        <!-- Columna 2: Saldo Pendiente -->
+                        <td class="text-end fw-bold {% if c.saldo_pendiente > 0 %}text-danger{% else %}text-secondary{% endif %} col-saldo" data-valor="{{ c.saldo_pendiente }}">
+                            $ {{ "{:,.2f}".format(c.saldo_pendiente) }}
+                        </td>
+                        <!-- Columna 3: Ventas Crédito -->
                         <td class="text-end fw-bold text-primary col-credito" data-valor="{{ c.total_credito }}">
                             $ {{ "{:,.2f}".format(c.total_credito) }}
                         </td>
+                        <!-- Columna 4: Abonos Realizados -->
                         <td class="text-end fw-bold text-success col-abonos" data-valor="{{ c.total_abonos }}">
                             $ {{ "{:,.2f}".format(c.total_abonos) }}
-                        </td>
-                        <td class="text-end fw-bold {% if c.saldo_pendiente > 0 %}text-danger{% else %}text-secondary{% endif %} col-saldo" data-valor="{{ c.saldo_pendiente }}">
-                            $ {{ "{:,.2f}".format(c.saldo_pendiente) }}
                         </td>
                     </tr>
                     {% endfor %}
@@ -120,9 +123,9 @@
 
         const formatoMoneda = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 2 });
 
+        document.getElementById('saldoPendienteGlobal').innerText = formatoMoneda.format(totalSaldo);
         document.getElementById('totalCreditoGlobal').innerText = formatoMoneda.format(totalCredito);
         document.getElementById('totalAbonosGlobal').innerText = formatoMoneda.format(totalAbonos);
-        document.getElementById('saldoPendienteGlobal').innerText = formatoMoneda.format(totalSaldo);
     }
 
     function filtrarTabla() {
@@ -131,27 +134,4 @@
         const filas = document.querySelectorAll('.fila-cartera');
 
         filas.forEach(row => {
-            const clienteText = row.querySelector('.col-cliente').textContent.toLowerCase();
-            if (clienteText.includes(filterValue)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        calcularTotales();
-    }
-
-    function limpiarFiltro() {
-        document.getElementById('filtroCliente').value = '';
-        filtrarTabla();
-    }
-
-    // Calcular sumatorias al cargar la página
-    document.addEventListener("DOMContentLoaded", function() {
-        calcularTotales();
-    });
-</script>
-
-</body>
-</html>
+            const clienteText = row.querySelector
