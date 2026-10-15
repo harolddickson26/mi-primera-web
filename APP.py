@@ -150,4 +150,473 @@ def nuevo_cliente():
         email = request.form["email"]
         celular = request.form["celular"]
 
-        cliente_existente = Cliente.query.filter_by(nit_cedula=nit_
+        cliente_existente = Cliente.query.filter_by(nit_cedula=nit_cedula).first()
+        if cliente_existente:
+            error = "Ya existe un cliente registrado con ese NIT o Cédula."
+        else:
+            nuevo = Cliente(nombre=nombre, nit_cedula=nit_cedula, direccion=direccion, email=email, celular=celular)
+            db.session.add(nuevo)
+            db.session.commit()
+            return redirect(url_for("clientes"))
+    return render_template("nuevo_cliente.html", error=error)
+
+@app.route("/clientes/editar/<int:id>", methods=["GET", "POST"])
+def editar_cliente(id):
+    if "usuario" not in session: return redirect(url_for("login"))
+    cliente = Cliente.query.get_or_404(id)
+    error = None
+    if request.method == "POST":
+        nit_nuevo = request.form["nit_cedula"]
+        existente = Cliente.query.filter(Cliente.nit_cedula == nit_nuevo, Cliente.id != id).first()
+        if existente:
+            error = "Ese NIT o Cédula ya está registrado en otro cliente."
+        else:
+            cliente.nombre = request.form["nombre"]
+            cliente.nit_cedula = nit_nuevo
+            cliente.direccion = request.form["direccion"]
+            cliente.email = request.form["email"]
+            cliente.celular = request.form["celular"]
+            db.session.commit()
+            return redirect(url_for("clientes"))
+    return render_template("editar_cliente.html", cliente=cliente, error=error)
+
+# ==========================================
+# MÓDULO PRODUCTOS
+# ==========================================
+
+@app.route("/productos")
+def productos():
+    if "usuario" not in session: return redirect(url_for("login"))
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    return render_template("productos.html", productos=lista_productos)
+
+@app.route("/productos/nuevo", methods=["GET", "POST"])
+def nuevo_producto():
+    if "usuario" not in session: return redirect(url_for("login"))
+    error = None
+    if request.method == "POST":
+        codigo = request.form["codigo"]
+        nombre = request.form["nombre"]
+        embalaje = request.form["embalaje"]
+
+        producto_existente = Producto.query.filter_by(codigo=codigo).first()
+        if producto_existente:
+            error = "Ya existe un producto registrado con ese código."
+        else:
+            nuevo = Producto(codigo=codigo, nombre=nombre, embalaje=embalaje)
+            db.session.add(nuevo)
+            db.session.commit()
+            return redirect(url_for("productos"))
+    return render_template("nuevo_producto.html", error=error)
+
+@app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
+def editar_producto(id):
+    if "usuario" not in session: return redirect(url_for("login"))
+    producto = Producto.query.get_or_404(id)
+    error = None
+    if request.method == "POST":
+        codigo_nuevo = request.form["codigo"]
+        existente = Producto.query.filter(Producto.codigo == codigo_nuevo, Producto.id != id).first()
+        if existente:
+            error = "Ese Código de Producto ya pertenece a otro registro."
+        else:
+            producto.codigo = codigo_nuevo
+            producto.nombre = request.form["nombre"]
+            producto.embalaje = request.form["embalaje"]
+            db.session.commit()
+            return redirect(url_for("productos"))
+    return render_template("editar_producto.html", producto=producto, error=error)
+
+# ==========================================
+# MÓDULO VENTAS
+# ==========================================
+
+@app.route("/ingresar-venta", methods=["GET", "POST"])
+def ingresar_venta():
+    if "usuario" not in session: return redirect(url_for("login"))
+    
+    error = None
+    if request.method == "POST":
+        try:
+            cliente_nombre = request.form.get("cliente_nombre", "Público General")
+            producto_id = request.form.get("producto_id")
+            codigo_producto = request.form["codigo_producto"]
+            nombre_producto = request.form["nombre_producto"]
+            embalaje = request.form.get("embalaje", "")
+            cantidad = float(request.form["cantidad"])
+            costo_unitario = float(request.form["costo_unitario"])
+            precio_unitario = float(request.form["precio_unitario"])
+            total_venta = cantidad * precio_unitario
+            total_costo = cantidad * costo_unitario
+            
+            tipo_pago = request.form.get("tipo_pago", "CONTADO")
+            if tipo_pago == "CREDITO":
+                entidad_pago = None
+            else:
+                entidad_pago = request.form.get("entidad_pago", "Efectivo")
+
+            fecha_venta_str = request.form["fecha_venta"]
+            fecha_venta = datetime.strptime(fecha_venta_str, "%Y-%m-%d").date()
+
+            nueva_venta = Venta(
+                cliente_nombre=cliente_nombre,
+                producto_id=int(producto_id) if producto_id else None,
+                codigo_producto=codigo_producto,
+                nombre_producto=nombre_producto,
+                embalaje=embalaje,
+                cantidad=cantidad,
+                costo_unitario=costo_unitario,
+                precio_unitario=precio_unitario,
+                total_costo=total_costo,
+                total_venta=total_venta,
+                tipo_pago=tipo_pago,
+                entidad_pago=entidad_pago,
+                fecha_venta=fecha_venta
+            )
+            db.session.add(nueva_venta)
+            db.session.commit()
+            return redirect(url_for("total_ventas"))
+        except Exception as e:
+            db.session.rollback()
+            error = f"Error al registrar la venta: {str(e)}"
+
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+    return render_template("ingresar_venta.html", clientes=lista_clientes, productos=lista_productos, fecha_hoy=fecha_hoy, error=error)
+
+@app.route("/ventas/editar/<int:id>", methods=["GET", "POST"])
+def editar_venta(id):
+    if "usuario" not in session: 
+        return redirect(url_for("login"))
+    
+    venta = Venta.query.get_or_404(id)
+    error = None
+
+    if request.method == "POST":
+        try:
+            venta.cliente_nombre = request.form.get("cliente_nombre", "Público General")
+            producto_id = request.form.get("producto_id")
+            if producto_id:
+                venta.producto_id = int(producto_id)
+            
+            venta.codigo_producto = request.form["codigo_producto"]
+            venta.nombre_producto = request.form["nombre_producto"]
+            venta.embalaje = request.form.get("embalaje", "")
+            venta.cantidad = float(request.form["cantidad"])
+            venta.costo_unitario = float(request.form["costo_unitario"])
+            venta.precio_unitario = float(request.form["precio_unitario"])
+            venta.total_venta = venta.cantidad * venta.precio_unitario
+            venta.total_costo = venta.cantidad * venta.costo_unitario
+            
+            nuevo_tipo = request.form.get("tipo_pago", "CONTADO")
+            venta.tipo_pago = nuevo_tipo
+            
+            if nuevo_tipo == "CREDITO":
+                venta.entidad_pago = None
+            else:
+                venta.entidad_pago = request.form.get("entidad_pago", "Efectivo")
+
+            fecha_venta_str = request.form["fecha_venta"]
+            venta.fecha_venta = datetime.strptime(fecha_venta_str, "%Y-%m-%d").date()
+
+            db.session.commit()
+            return redirect(url_for("total_ventas"))
+        except Exception as e:
+            db.session.rollback()
+            error = f"Error al actualizar la venta: {str(e)}"
+
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    return render_template("editar_venta.html", venta=venta, clientes=lista_clientes, productos=lista_productos, error=error)
+
+@app.route("/total-ventas")
+def total_ventas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    
+    lista_ventas = Venta.query.order_by(Venta.fecha_venta.desc(), Venta.id.desc()).all()
+    
+    suma_ventas = sum(v.total_venta for v in lista_ventas)
+    suma_costos = sum(v.total_costo for v in lista_ventas)
+    utilidad_total = suma_ventas - suma_costos
+
+    return render_template(
+        "total_ventas.html", 
+        ventas=lista_ventas, 
+        suma_ventas=suma_ventas, 
+        suma_costos=suma_costos, 
+        utilidad_total=utilidad_total
+    )
+
+# ==========================================
+# MÓDULO ENTRADAS
+# ==========================================
+
+@app.route("/total-entradas")
+def total_entradas():
+    if "usuario" not in session: return redirect(url_for("login"))
+    
+    lista_entradas = Entrada.query.order_by(Entrada.fecha.desc(), Entrada.id.desc()).all()
+    
+    total_registros = len(lista_entradas)
+    suma_costos_total = sum(e.costo_total_final or e.costo_total or 0 for e in lista_entradas)
+    suma_unidades = sum(e.cant_unidades or 0 for e in lista_entradas)
+
+    return render_template(
+        "total_entradas.html",
+        entradas=lista_entradas,
+        total_registros=total_registros,
+        suma_costos_total=suma_costos_total,
+        suma_unidades=suma_unidades
+    )
+
+@app.route("/entradas/eliminar/<int:id>", methods=["POST"])
+def eliminar_entrada(id):
+    if "usuario" not in session: return redirect(url_for("login"))
+    clave = request.form.get("clave", "")
+    if clave == "0000":
+        entrada = Entrada.query.get_or_404(id)
+        db.session.delete(entrada)
+        db.session.commit()
+    return redirect(url_for("total_entradas"))
+
+@app.route("/ingresar-entrada", methods=["GET", "POST"])
+def ingresar_entrada():
+    if "usuario" not in session: return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        try:
+            data = request.get_json()
+            fecha_str = data.get("fecha")
+            fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+            proveedor = data.get("proveedor", "")
+            factura = data.get("factura", "")
+            items = data.get("items", [])
+            
+            if not items:
+                return {"success": False, "error": "Debe agregar al menos un producto."}, 400
+
+            import re
+            for item in items:
+                codigo = item.get("codigo")
+                producto = item.get("producto")
+                embalaje_str = item.get("embalaje", "1")
+                
+                match = re.search(r'(\d+[\.,]?\d*)', embalaje_str)
+                factor_embalaje = float(match.group(1).replace(',', '.')) if match else 1.0
+
+                cant_paquetes = float(item.get("cant_paquetes", 0))
+                cant_unidades = cant_paquetes * factor_embalaje
+                
+                costo = float(item.get("costo", 0))
+                tipo_iva = item.get("tipo_iva", "sin_iva")
+                
+                if tipo_iva == "sin_iva":
+                    costo_iva = costo * 1.19
+                    costo_unit_placa = costo * 1.19
+                    costo_unit_paca = costo * 1.19
+                else:
+                    costo_iva = costo
+                    costo_unit_placa = costo
+                    costo_unit_paca = costo
+                    
+                costo_total = cant_paquetes * costo_unit_paca
+                costo_unitario = (costo_total / cant_unidades) if cant_unidades > 0 else 0
+                precio_sugerido = costo_unit_paca * 1.10
+                
+                nueva_entrada = Entrada(
+                    fecha=fecha,
+                    proveedor=proveedor,
+                    factura=factura,
+                    codigo=codigo,
+                    producto=producto,
+                    embalaje=embalaje_str,
+                    cant_paquetes=cant_paquetes,
+                    cant_unidades=cant_unidades,
+                    costo=costo,
+                    costo_iva=costo_iva,
+                    costo_unit_placa=costo_unit_placa,
+                    costo_unit_paca=costo_unit_paca,
+                    costo_total=costo_total,
+                    costo_unitario=costo_unitario,
+                    precio_sugerido=precio_sugerido,
+                    costo_x_cantidad=costo_total,
+                    costo_total_final=costo_total
+                )
+                db.session.add(nueva_entrada)
+            
+            db.session.commit()
+            return {"success": True, "redirect": url_for("total_entradas")}
+        except Exception as e:
+            db.session.rollback()
+            return {"success": False, "error": str(e)}, 400
+
+    lista_productos = Producto.query.order_by(Producto.nombre.asc()).all()
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+    return render_template("ingresar_entrada.html", productos=lista_productos, fecha_hoy=fecha_hoy)
+
+# ==========================================
+# MÓDULO ABONOS
+# ==========================================
+
+@app.route("/ABONOS")
+def ABONOS():
+    if "usuario" not in session: return redirect(url_for("login"))
+    lista_abonos = Abono.query.order_by(Abono.fecha.desc(), Abono.id.desc()).all()
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+    return render_template("abonos.html", abonos=lista_abonos, clientes=lista_clientes, fecha_hoy=fecha_hoy)
+
+@app.route("/abonos/crear", methods=["POST"])
+def crear_abono():
+    if "usuario" not in session: return redirect(url_for("login"))
+    try:
+        fecha_str = request.form.get("fecha")
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        cliente = request.form.get("cliente")
+        total_abono = float(request.form.get("total_abono", 0))
+        medio_abono = request.form.get("medio_abono")
+
+        nuevo_abono = Abono(
+            fecha=fecha,
+            cliente=cliente,
+            total_abono=total_abono,
+            medio_abono=medio_abono
+        )
+        db.session.add(nuevo_abono)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        
+    return redirect(url_for("ABONOS"))
+
+# ==========================================
+# MÓDULO CARTERA
+# ==========================================
+
+@app.route("/cartera")
+def cartera():
+    if "usuario" not in session: return redirect(url_for("login"))
+
+    # Obtener la lista completa de clientes registrados
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+
+    # Obtener ventas a CREDITO
+    ventas_credito = Venta.query.filter(Venta.tipo_pago == 'CREDITO').all()
+    
+    # Obtener todos los abonos
+    todos_abonos = Abono.query.all()
+
+    # Agrupar datos por cliente
+    cartera_clientes = []
+    
+    # Diccionarios auxiliares para agrupar
+    dict_ventas = {}
+    for v in ventas_credito:
+        c_nombre = v.cliente_nombre or "Sin Asignar"
+        dict_ventas[c_nombre] = dict_ventas.get(c_nombre, 0.0) + (v.total_venta or 0.0)
+
+    dict_abonos = {}
+    for a in todos_abonos:
+        c_nombre = a.cliente or "Sin Asignar"
+        dict_abonos[c_nombre] = dict_abonos.get(c_nombre, 0.0) + (a.total_abono or 0.0)
+
+    # Combinar todos los clientes conocidos (de la tabla Cliente y de transacciones)
+    nombres_clientes = set([c.nombre for c in lista_clientes] + list(dict_ventas.keys()) + list(dict_abonos.keys()))
+
+    for nombre in sorted(nombres_clientes):
+        total_credito = dict_ventas.get(nombre, 0.0)
+        total_abonos = dict_abonos.get(nombre, 0.0)
+        saldo_pendiente = total_credito - total_abonos
+
+        # Solo incluir clientes que tengan movimientos
+        if total_credito > 0 or total_abonos > 0:
+            cartera_clientes.append({
+                'cliente': nombre,
+                'total_credito': total_credito,
+                'total_abonos': total_abonos,
+                'saldo_pendiente': saldo_pendiente
+            })
+
+    return render_template(
+        "cartera.html",
+        cartera=cartera_clientes,
+        lista_clientes=sorted(nombres_clientes)
+    )
+
+# ==========================================
+# MÓDULO REPORTE (NUEVO)
+# ==========================================
+
+@app.route("/reporte")
+def reporte():
+    if "usuario" not in session: return redirect(url_for("login"))
+
+    # Obtener lista de clientes para el filtro
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+    nombres_clientes = [c.nombre for c in lista_clientes]
+
+    # Consultar ventas y abonos
+    todas_ventas = Venta.query.all()
+    todos_abonos = Abono.query.all()
+
+    # Agrupar registros consolidados por (fecha, cliente)
+    consolidado_dict = {}
+
+    for v in todas_ventas:
+        fecha_str = v.fecha_venta.strftime("%Y-%m-%d") if v.fecha_venta else ""
+        cliente = v.cliente_nombre or "Sin Asignar"
+        clave = (fecha_str, cliente)
+
+        if clave not in consolidado_dict:
+            consolidado_dict[clave] = {"ventas": 0.0, "abonos": 0.0}
+        consolidado_dict[clave]["ventas"] += (v.total_venta or 0.0)
+
+    for a in todos_abonos:
+        fecha_str = a.fecha.strftime("%Y-%m-%d") if a.fecha else ""
+        cliente = a.cliente or "Sin Asignar"
+        clave = (fecha_str, cliente)
+
+        if clave not in consolidado_dict:
+            consolidado_dict[clave] = {"ventas": 0.0, "abonos": 0.0}
+        consolidado_dict[clave]["abonos"] += (a.total_abono or 0.0)
+
+    # Convertir a lista y ordenar de más reciente a más antiguo
+    reporte_registros = []
+    for (fecha, cliente), valores in consolidado_dict.items():
+        if fecha:
+            reporte_registros.append({
+                "fecha": fecha,
+                "cliente": cliente,
+                "total_ventas": valores["ventas"],
+                "total_abonos": valores["abonos"]
+            })
+
+    reporte_registros.sort(key=lambda x: x["fecha"], reverse=True)
+
+    # Combinar nombres de clientes para el filtro dropdown
+    clientes_extra = set(r["cliente"] for r in reporte_registros)
+    todos_los_clientes = sorted(set(nombres_clientes).union(clientes_extra))
+
+    return render_template(
+        "reporte.html",
+        registros=reporte_registros,
+        clientes=todos_los_clientes
+    )
+
+# ==========================================
+# RUTAS AUXILIARES / PENDIENTES
+# ==========================================
+
+@app.route("/inventario")
+def inventario():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Inventario", contenido="Gestión e historial del inventario de productos.")
+
+@app.route("/utilidad")
+def utilidad():
+    if "usuario" not in session: return redirect(url_for("login"))
+    return render_template("seccion.html", titulo="Utilidad", contenido="Reporte de ganancias y utilidades.")
+
+if __name__ == "__main__":
+    app.run(debug=True)
