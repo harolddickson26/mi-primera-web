@@ -77,7 +77,6 @@ class Entrada(db.Model):
     costo_total_final = db.Column(db.Float, default=0.0)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
 
-# NUEVO MODELO PARA LOS ABONOS
 class Abono(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.Date, nullable=False)
@@ -457,7 +456,7 @@ def ingresar_entrada():
     return render_template("ingresar_entrada.html", productos=lista_productos, fecha_hoy=fecha_hoy)
 
 # ==========================================
-# MÓDULO ABONOS (NUEVO)
+# MÓDULO ABONOS
 # ==========================================
 
 @app.route("/ABONOS")
@@ -490,6 +489,60 @@ def crear_abono():
         db.session.rollback()
         
     return redirect(url_for("ABONOS"))
+
+# ==========================================
+# MÓDULO CARTERA (NUEVO)
+# ==========================================
+
+@app.route("/cartera")
+def cartera():
+    if "usuario" not in session: return redirect(url_for("login"))
+
+    # Obtener la lista completa de clientes registrados
+    lista_clientes = Cliente.query.order_by(Cliente.nombre.asc()).all()
+
+    # Obtener ventas a CREDITO
+    ventas_credito = Venta.query.filter(Venta.tipo_pago == 'CREDITO').all()
+    
+    # Obtener todos los abonos
+    todos_abonos = Abono.query.all()
+
+    # Agrupar datos por cliente
+    cartera_clientes = []
+    
+    # Diccionarios auxiliares para agrupar
+    dict_ventas = {}
+    for v in ventas_credito:
+        c_nombre = v.cliente_nombre or "Sin Asignar"
+        dict_ventas[c_nombre] = dict_ventas.get(c_nombre, 0.0) + (v.total_venta or 0.0)
+
+    dict_abonos = {}
+    for a in todos_abonos:
+        c_nombre = a.cliente or "Sin Asignar"
+        dict_abonos[c_nombre] = dict_abonos.get(c_nombre, 0.0) + (a.total_abono or 0.0)
+
+    # Combinar todos los clientes conocidos (de la tabla Cliente y de transacciones)
+    nombres_clientes = set([c.nombre for c in lista_clientes] + list(dict_ventas.keys()) + list(dict_abonos.keys()))
+
+    for nombre in sorted(nombres_clientes):
+        total_credito = dict_ventas.get(nombre, 0.0)
+        total_abonos = dict_abonos.get(nombre, 0.0)
+        saldo_pendiente = total_credito - total_abonos
+
+        # Solo incluir clientes que tengan movimientos
+        if total_credito > 0 or total_abonos > 0:
+            cartera_clientes.append({
+                'cliente': nombre,
+                'total_credito': total_credito,
+                'total_abonos': total_abonos,
+                'saldo_pendiente': saldo_pendiente
+            })
+
+    return render_template(
+        "cartera.html",
+        cartera=cartera_clientes,
+        lista_clientes=sorted(nombres_clientes)
+    )
 
 # ==========================================
 # RUTAS AUXILIARES / PENDIENTES
