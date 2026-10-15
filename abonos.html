@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Abonos</title>
+    <!-- Bootstrap 5 CSS y JS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .card-custom { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="container card-custom">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark m-0">Total Abonos</h2>
+            <small class="text-muted">Resumen total de los abonos registrados.</small>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalIngresarAbono">
+                ➕ Ingresar Abono
+            </button>
+            <a href="/" class="btn btn-secondary ms-2">← Volver al Menú Principal</a>
+        </div>
+    </div>
+
+    <!-- Tabla de Abonos -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle" id="tablaAbonos">
+            <thead class="table-light">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Total Abono</th>
+                    <th>Medio de Abono</th>
+                </tr>
+                <!-- Filtros dinámicos por columna -->
+                <tr>
+                    <th><input type="text" class="form-control form-control-sm filtro-col" data-col="0" placeholder="Filtrar fecha..."></th>
+                    <th><input type="text" class="form-control form-control-sm filtro-col" data-col="1" placeholder="Filtrar cliente..."></th>
+                    <th><input type="text" class="form-control form-control-sm filtro-col" data-col="2" placeholder="Filtrar total..."></th>
+                    <th><input type="text" class="form-control form-control-sm filtro-col" data-col="3" placeholder="Filtrar medio..."></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if abonos %}
+                    {% for a in abonos %}
+                    <tr>
+                        <td>{{ a.fecha.strftime('%Y-%m-%d') if a.fecha else '' }}</td>
+                        <td class="fw-bold">{{ a.cliente }}</td>
+                        <td class="text-success fw-bold">$ {{ "{:,.2f}".format(a.total_abono) }}</td>
+                        <td><span class="badge bg-info text-dark">{{ a.medio_abono }}</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">No hay abonos registrados aún.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Ingresar Abono -->
+<div class="modal fade" id="modalIngresarAbono" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Ingresar Abono</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="{{ url_for('crear_abono') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha:</label>
+                        <input type="date" name="fecha" value="{{ fecha_hoy }}" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cliente:</label>
+                        <select name="cliente" class="form-select" required>
+                            <option value="" disabled selected>-- Seleccione un cliente --</option>
+                            {% for c in clientes %}
+                                <option value="{{ c.nombre }}">{{ c.nombre }} (NIT/CED: {{ c.nit_cedula }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Total Abono ($):</label>
+                        <input type="number" step="0.01" name="total_abono" class="form-control" placeholder="0.00" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Medio de Abono:</label>
+                        <select name="medio_abono" class="form-select" required>
+                            <option value="Nequi">Nequi</option>
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Daviplata">Daviplata</option>
+                            <option value="Bancolombia">Bancolombia</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Script Filtros Dinámicos -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const filtros = document.querySelectorAll('.filtro-col');
+        filtros.forEach(input => {
+            input.addEventListener('keyup', function() {
+                const colIndex = parseInt(this.getAttribute('data-col'));
+                const filterValue = this.value.toLowerCase();
+                const tbody = document.querySelector('#tablaAbonos tbody');
+                const rows = tbody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > colIndex) {
+                        const cellText = cells[colIndex].textContent.toLowerCase();
+                        row.style.display = cellText.includes(filterValue) ? '' : 'none';
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
